@@ -74,13 +74,13 @@ export const QrGenerator = () => {
             <div className="relative group">
               <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-zinc-500 group-focus-within:text-zinc-200 transition-colors" />
               <Input
-                type="text"
-                placeholder="https://example.com"
-                className="pl-9 bg-black/40 border-zinc-800 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500 font-mono transition-all"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-              />
+              type="text"
+              placeholder="https://example.com"
+              className="pl-9 bg-black/40 border-zinc-800 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500 font-mono transition-all placeholder:text-zinc-700 text-zinc-300"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+            />
             </div>
           </div>
 

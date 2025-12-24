@@ -26,8 +26,6 @@
 }
 
 .dark {
-  /* THE SENIOR ARCHITECT PALETTE: "Deep Zinc" */
-  /* Not pitch black (0 0 0), but a rich, deep charcoal */
   --background: 240 10% 3.9%;
   --foreground: 0 0% 98%;
   
@@ -91,4 +89,13 @@
 
 body {
   @apply bg-background text-foreground;
+}
+
+@layer base {
+  input {
+    @apply placeholder:text-zinc-700 placeholder:opacity-50 placeholder:transition-opacity;
+  }
+  input:focus::placeholder {
+    opacity: 0;
+  }
 }
