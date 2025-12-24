@@ -6,18 +6,71 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Download, Link as LinkIcon, Image as ImageIcon, FileCode } from "lucide-react"
+import { Download, Link as LinkIcon, Image as ImageIcon, FileCode, Loader2 } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
+import { toast } from "sonner"
 
 export const QrGenerator = () => {
   const [url, setUrl] = useState("")
   const [qrValue, setQrValue] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
   const qrRef = useRef<SVGSVGElement>(null)
+  
+  // Initialize Supabase client
+  const supabase = createClient()
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!url) return
-    setQrValue(url)
+    
+    setIsSaving(true)
+
+    // 1. SMART SANITIZATION:
+    // If the user forgot 'https://', we add it for them.
+    let finalUrl = url.trim()
+    if (!/^https?:\/\//i.test(finalUrl)) {
+      finalUrl = 'https://' + finalUrl
+    }
+
+    setQrValue(finalUrl)
+
+    // 2. Get current user
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (user) {
+      // 3. Safe Title Generation
+      // We wrap this in a try/catch so it NEVER crashes the app, 
+      // even if they type gibberish like "hello world"
+      let title = finalUrl
+      try {
+        const urlObj = new URL(finalUrl)
+        title = urlObj.hostname
+      } catch (e) {
+        // If parsing fails, just use the first 20 chars of what they typed
+        title = finalUrl.slice(0, 20)
+      }
+
+      // 4. Save to Database
+      const { error } = await supabase.from('qr_codes').insert({
+        long_url: finalUrl,
+        user_id: user.id,
+        title: title
+      })
+
+      if (error) {
+        toast.error("Generated locally, but failed to save", {
+          description: error.message
+        })
+      } else {
+        toast.success("QR Code Saved", {
+          description: "Added to your history library."
+        })
+      }
+    }
+    
+    setIsSaving(false)
   }
 
+  // ... (Download logic remains the same) ...
   const downloadSVG = () => {
     if (!qrRef.current) return
     const svgData = new XMLSerializer().serializeToString(qrRef.current)
@@ -28,29 +81,21 @@ export const QrGenerator = () => {
 
   const downloadPNG = () => {
     if (!qrRef.current) return
-    
-    // Create a canvas to convert SVG to PNG
     const svgData = new XMLSerializer().serializeToString(qrRef.current)
     const canvas = document.createElement("canvas")
     const ctx = canvas.getContext("2d")
     const img = new Image()
-    
-    // Add some padding/margin for the PNG so it looks nice
     const size = 256
     canvas.width = size
     canvas.height = size
-    
     img.onload = () => {
       if (!ctx) return
-      // Fill white background (optional, but safer for PNGs)
       ctx.fillStyle = "white"
       ctx.fillRect(0, 0, size, size)
       ctx.drawImage(img, 0, 0, size, size)
-      
       const pngUrl = canvas.toDataURL("image/png")
       triggerDownload(pngUrl, "qryptic-code.png")
     }
-    
     img.src = "data:image/svg+xml;base64," + btoa(svgData)
   }
 
@@ -68,19 +113,18 @@ export const QrGenerator = () => {
       <Card className="p-6 bg-zinc-900/50 border-zinc-800 backdrop-blur-xl shadow-2xl">
         <div className="space-y-6">
           
-          {/* Input Section */}
           <div className="space-y-2">
             <label className="text-xs font-mono text-zinc-400 ml-1">TARGET_URL</label>
             <div className="relative group">
               <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-zinc-500 group-focus-within:text-zinc-200 transition-colors" />
               <Input
-              type="text"
-              placeholder="https://example.com"
-              className="pl-9 bg-black/40 border-zinc-800 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500 font-mono transition-all placeholder:text-zinc-700 text-zinc-300"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-            />
+                type="text"
+                placeholder="https://example.com"
+                className="pl-9 bg-black/40 border-zinc-800 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500 font-mono transition-all"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+              />
             </div>
           </div>
 
@@ -88,12 +132,17 @@ export const QrGenerator = () => {
             <Button 
               className="w-full bg-white text-black hover:bg-zinc-200 font-bold tracking-tight transition-all"
               onClick={handleGenerate}
+              disabled={isSaving}
             >
-              GENERATE_QR
+              {isSaving ? (
+                <Loader2 className="animate-spin h-4 w-4 mr-2" />
+              ) : (
+                "GENERATE_QR"
+              )}
             </Button>
           </motion.div>
 
-          {/* The Materialization Zone */}
+          {/* Visualization Zone */}
           <div className="relative flex items-center justify-center min-h-[200px] bg-black/20 rounded-lg border border-zinc-800/50 border-dashed overflow-hidden">
             <AnimatePresence mode="wait">
               {qrValue ? (
