@@ -5,12 +5,13 @@ import { createClient } from "@/utils/supabase/client"
 import { QrCard } from "@/components/qr-card"
 import { Loader2 } from "lucide-react"
 
-// Define the shape of our data
 interface QrCode {
   id: string
   title: string
   long_url: string
   created_at: string
+  color: string
+  bgcolor: string
 }
 
 interface QrHistoryListProps {
@@ -23,7 +24,6 @@ export const QrHistoryList = ({ refreshTrigger = 0 }: QrHistoryListProps) => {
   const supabase = createClient()
 
   useEffect(() => {
-    // 1. Define the function inside the effect
     const fetchCodes = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -34,14 +34,12 @@ export const QrHistoryList = ({ refreshTrigger = 0 }: QrHistoryListProps) => {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
 
-      if (data) setCodes(data)
+      if (data) setCodes(data as unknown as QrCode[]) 
       setLoading(false)
     }
 
-    // 2. Call it immediately
     fetchCodes()
     
-    // 3. Set up the Realtime Listener
     const channel = supabase
       .channel('realtime-qr-codes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'qr_codes' }, () => {
@@ -49,7 +47,6 @@ export const QrHistoryList = ({ refreshTrigger = 0 }: QrHistoryListProps) => {
       })
       .subscribe()
 
-    // 4. Cleanup
     return () => {
       supabase.removeChannel(channel)
     }
@@ -82,6 +79,8 @@ export const QrHistoryList = ({ refreshTrigger = 0 }: QrHistoryListProps) => {
             title={code.title || "Untitled"}
             url={code.long_url}
             createdAt={code.created_at}
+            color={code.color}
+            bgColor={code.bgcolor}
             onDelete={removeCodeFromList}
           />
         ))}
