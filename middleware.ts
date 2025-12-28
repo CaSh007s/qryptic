@@ -33,14 +33,14 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // 1. If user is logged in and tries to visit home (/) or login page, send to dashboard
-  if (user && (request.nextUrl.pathname === "/" || request.nextUrl.pathname === "/login")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+  const path = request.nextUrl.pathname
+
+  if (!user && path.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  // 2. If user is NOT logged in and tries to visit dashboard, send to login
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
-    return NextResponse.redirect(new URL("/login", request.url))
+  if (user && (path === "/" || path === "/login")) {
+    return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
   return response
@@ -49,11 +49,12 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
+     * Match all request paths except:
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - auth/callback (important for auth flow to work!)
+     * - auth/callback (important for auth flow!)
+     * - images/files
      */
     "/((?!_next/static|_next/image|favicon.ico|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],

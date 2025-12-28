@@ -25,7 +25,6 @@ export function Navbar() {
   const router = useRouter()
 
   useEffect(() => {
-    // Check active session
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
@@ -33,7 +32,6 @@ export function Navbar() {
     }
     getUser()
 
-    // Listen for auth changes (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
     })
@@ -46,7 +44,6 @@ export function Navbar() {
     router.push("/login")
   }
 
-  // Get initials for Avatar
   const getInitials = () => {
     if (!user?.user_metadata?.full_name) return "U"
     return user.user_metadata.full_name
@@ -57,10 +54,14 @@ export function Navbar() {
       .substring(0, 2)
   }
 
+  const logoDestination = user ? "/dashboard" : "/"
+
   return (
     <header className="fixed top-0 w-full z-50 border-b border-white/5 bg-black/50 backdrop-blur-xl transition-all">
       <div className="container flex h-16 items-center justify-between px-6 mx-auto">
-        <Link href="/" className="flex items-center gap-2">
+        
+        {/* SMART LOGO LINK */}
+        <Link href={logoDestination} className="flex items-center gap-2">
           <div className="scale-75 origin-left">
             <QrypticLogo />
           </div>
@@ -110,9 +111,8 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            // LOGGED OUT STATE
-            <>
-            </>
+             // LOGGED OUT STATE
+            <></>
           )}
         </div>
       </div>

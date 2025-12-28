@@ -6,17 +6,21 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Download, Link as LinkIcon, Image as ImageIcon, FileCode, Loader2 } from "lucide-react"
+import { Link as LinkIcon, Image as ImageIcon, FileCode, Loader2 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 
-export const QrGenerator = () => {
+interface QrGeneratorProps {
+  onSuccess?: () => void
+}
+
+
+export const QrGenerator = ({ onSuccess }: QrGeneratorProps) => {
   const [url, setUrl] = useState("")
   const [qrValue, setQrValue] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const qrRef = useRef<SVGSVGElement>(null)
   
-  // Initialize Supabase client
   const supabase = createClient()
 
   const handleGenerate = async () => {
@@ -24,8 +28,7 @@ export const QrGenerator = () => {
     
     setIsSaving(true)
 
-    // 1. SMART SANITIZATION:
-    // If the user forgot 'https://', we add it for them.
+    // 1. SMART SANITIZATION
     let finalUrl = url.trim()
     if (!/^https?:\/\//i.test(finalUrl)) {
       finalUrl = 'https://' + finalUrl
@@ -38,14 +41,11 @@ export const QrGenerator = () => {
     
     if (user) {
       // 3. Safe Title Generation
-      // We wrap this in a try/catch so it NEVER crashes the app, 
-      // even if they type gibberish like "hello world"
       let title = finalUrl
       try {
         const urlObj = new URL(finalUrl)
         title = urlObj.hostname
       } catch (e) {
-        // If parsing fails, just use the first 20 chars of what they typed
         title = finalUrl.slice(0, 20)
       }
 
@@ -64,13 +64,15 @@ export const QrGenerator = () => {
         toast.success("QR Code Saved", {
           description: "Added to your history library."
         })
+        
+        if (onSuccess) onSuccess()  
       }
     }
     
     setIsSaving(false)
   }
 
-  // ... (Download logic remains the same) ...
+  // Download Handlers
   const downloadSVG = () => {
     if (!qrRef.current) return
     const svgData = new XMLSerializer().serializeToString(qrRef.current)
@@ -112,7 +114,6 @@ export const QrGenerator = () => {
     <div className="w-full max-w-md mx-auto">
       <Card className="p-6 bg-zinc-900/50 border-zinc-800 backdrop-blur-xl shadow-2xl">
         <div className="space-y-6">
-          
           <div className="space-y-2">
             <label className="text-xs font-mono text-zinc-400 ml-1">TARGET_URL</label>
             <div className="relative group">
@@ -142,7 +143,6 @@ export const QrGenerator = () => {
             </Button>
           </motion.div>
 
-          {/* Visualization Zone */}
           <div className="relative flex items-center justify-center min-h-[200px] bg-black/20 rounded-lg border border-zinc-800/50 border-dashed overflow-hidden">
             <AnimatePresence mode="wait">
               {qrValue ? (
@@ -178,7 +178,6 @@ export const QrGenerator = () => {
             </AnimatePresence>
           </div>
 
-          {/* Download Options */}
           {qrValue && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
