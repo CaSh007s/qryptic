@@ -17,8 +17,8 @@ interface QrGeneratorProps {
 
 export const QrGenerator = ({ onSuccess }: QrGeneratorProps) => {
   const [url, setUrl] = useState("")
-  const [color, setColor] = useState("#000000") // Default Black
-  const [bgColor, setBgColor] = useState("#ffffff") // Default White
+  const [color, setColor] = useState("#000000")
+  const [bgColor, setBgColor] = useState("#ffffff")
   const [qrValue, setQrValue] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const qrRef = useRef<SVGSVGElement>(null)
@@ -29,17 +29,14 @@ export const QrGenerator = ({ onSuccess }: QrGeneratorProps) => {
     if (!url) return
     setIsSaving(true)
 
-    // 1. Sanitize URL
     let finalUrl = url.trim()
     if (!/^https?:\/\//i.test(finalUrl)) {
       finalUrl = 'https://' + finalUrl
     }
-    setQrValue(finalUrl)
 
     const { data: { user } } = await supabase.auth.getUser()
     
     if (user) {
-      // 2. Title Generation
       let title = finalUrl
       try {
         const urlObj = new URL(finalUrl)
@@ -48,19 +45,30 @@ export const QrGenerator = ({ onSuccess }: QrGeneratorProps) => {
         title = finalUrl.slice(0, 20)
       }
 
-      // 3. Save with Colors
-      const { error } = await supabase.from('qr_codes').insert({
+      // 1. Save FIRST to get the ID
+      const { data, error } = await supabase.from('qr_codes').insert({
         long_url: finalUrl,
         user_id: user.id,
         title: title,
         color: color,
-        bgcolor: bgColor 
-      })
+        bgcolor: bgColor
+      }).select().single()
 
       if (error) {
         toast.error("Failed to save", { description: error.message })
-      } else {
-        toast.success("QR Code Saved")
+      } else if (data) {
+        
+        // --- ANALYTICS FEATURE (DISABLED FOR LOCALHOST) ---
+        // const shortLink = `${window.location.origin}/go/${data.id}`
+        // setQrValue(shortLink) 
+        
+        // DIRECT LINK MODE (Works on Mobile/Localhost)
+        setQrValue(finalUrl) 
+
+        toast.success("QR Code Saved", {
+          description: "Added to history (Analytics disabled locally)."
+        })
+        
         if (onSuccess) onSuccess()  
       }
     }

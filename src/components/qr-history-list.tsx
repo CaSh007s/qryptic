@@ -12,6 +12,7 @@ interface QrCode {
   created_at: string
   color: string
   bgcolor: string
+  scan_count: number
 }
 
 interface QrHistoryListProps {
@@ -81,6 +82,7 @@ export const QrHistoryList = ({ refreshTrigger = 0 }: QrHistoryListProps) => {
             createdAt={code.created_at}
             color={code.color}
             bgColor={code.bgcolor}
+            scanCount={code.scan_count}
             onDelete={removeCodeFromList}
           />
         ))}

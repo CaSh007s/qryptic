@@ -15,11 +15,21 @@ interface QrCardProps {
   url: string
   createdAt: string
   color?: string     
-  bgColor?: string   
+  bgColor?: string
+  scanCount: number
   onDelete: (id: string) => void
 }
 
-export const QrCard = ({ id, title, url, createdAt, color = "#000000", bgColor = "#ffffff", onDelete }: QrCardProps) => {
+export const QrCard = ({ 
+  id, 
+  title, 
+  url, 
+  createdAt, 
+  color = "#000000", 
+  bgColor = "#ffffff", 
+  scanCount, 
+  onDelete 
+}: QrCardProps) => {
   const supabase = createClient()
 
   const handleDelete = async () => {
@@ -51,7 +61,7 @@ export const QrCard = ({ id, title, url, createdAt, color = "#000000", bgColor =
     <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
       <Card className="flex items-center p-4 bg-zinc-900/40 border-zinc-800 hover:border-zinc-700 transition-colors group">
         
-        {/* Preview now uses the custom colors */}
+        {/* Preview: Uses the custom user colors */}
         <div className="p-2 rounded-md mr-4 shrink-0 border border-zinc-800" style={{ backgroundColor: bgColor }}>
           <QRCodeSVG 
             id={`qr-${id}`}
@@ -63,14 +73,24 @@ export const QrCard = ({ id, title, url, createdAt, color = "#000000", bgColor =
           />
         </div>
 
+        {/* Info Section */}
         <div className="flex-1 min-w-0 overflow-hidden mr-4">
           <h3 className="font-bold text-zinc-200 truncate">{title}</h3>
-          <p className="text-xs text-zinc-500 truncate font-mono">{url}</p>
-          <p className="text-[10px] text-zinc-600 mt-1 uppercase tracking-wider">
-            {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
-          </p>
+          
+          <div className="flex items-center gap-2 mt-1">
+            {/* Analytics Badge */}
+            <div className="flex items-center gap-1 bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+              <span className="text-[10px] font-mono text-zinc-300 font-medium">{scanCount} Scans</span>
+            </div>
+            
+            <p className="text-[10px] text-zinc-600 uppercase tracking-wider ml-1">
+              {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
+            </p>
+          </div>
         </div>
 
+        {/* Actions (Visible on Hover) */}
         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button variant="ghost" size="icon" onClick={handleDownload} className="h-8 w-8 hover:bg-zinc-800 hover:text-white">
             <Download className="h-4 w-4" />

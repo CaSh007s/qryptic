@@ -12,33 +12,44 @@ import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 import { QrypticLogo } from "@/components/qryptic-logo"
 
-export default function LoginPage() {
+export default function SignupPage() {
+  const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    // 1. Sign up with Supabase
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: name, // Saving their name to metadata
+        },
+      },
     })
 
     if (error) {
-      toast.error("Login Failed", {
+      toast.error("Signup Failed", {
         description: error.message,
       })
       setLoading(false)
     } else {
-      toast.success("Welcome back!", {
-        description: "Redirecting to dashboard...",
+      // 2. Success!
+      toast.success("Account Created!", {
+        description: "You can now log in with your credentials.",
       })
-      router.push("/dashboard")
-      router.refresh()
+      
+      // Optional: Auto-redirect to login so they can sign in
+      setTimeout(() => {
+        router.push("/login")
+      }, 1500)
     }
   }
 
@@ -56,10 +67,10 @@ export default function LoginPage() {
             <QrypticLogo />
           </Link>
           <h1 className="text-2xl font-bold tracking-tight text-white">
-            Welcome back
+            Create an account
           </h1>
           <p className="text-sm text-zinc-400">
-            Enter your credentials to access your workspace
+            Join Qryptic to start tracking your connections
           </p>
         </div>
 
@@ -73,11 +84,9 @@ export default function LoginPage() {
                 className="w-full border-zinc-800 bg-zinc-900/20 text-zinc-600 cursor-not-allowed hover:bg-zinc-900/20 hover:text-zinc-600 relative opacity-70"
                 disabled={true}
               >
-                {/* Badge */}
                 <span className="absolute -top-2 -right-2 bg-indigo-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold tracking-wider z-10 shadow-lg shadow-indigo-500/20">
                   SOON
                 </span>
-                
                 <svg className="mr-2 h-4 w-4 opacity-50" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
                   <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
                 </svg>
@@ -94,7 +103,23 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleSignup} className="space-y-4">
+              
+              {/* Name Input */}
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-zinc-300">Full Name</Label>
+                <Input 
+                  id="name" 
+                  type="text" 
+                  placeholder="John Doe"
+                  className="bg-black/40 border-zinc-800 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500 placeholder:text-zinc-700 placeholder:opacity-50"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* Email Input */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-zinc-300">Email</Label>
                 <Input 
@@ -107,23 +132,19 @@ export default function LoginPage() {
                   required
                 />
               </div>
+
+              {/* Password Input */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-zinc-300">Password</Label>
-                  <Link 
-                    href="#" 
-                    className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+                <Label htmlFor="password" className="text-zinc-300">Password</Label>
                 <Input 
                   id="password" 
                   type="password" 
+                  placeholder="••••••••"
                   className="bg-black/40 border-zinc-800 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500 placeholder:text-zinc-700 placeholder:opacity-50"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={6}
                 />
               </div>
               
@@ -135,7 +156,7 @@ export default function LoginPage() {
                 {loading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  "SIGN IN"
+                  "CREATE ACCOUNT"
                 )}
               </Button>
             </form>
@@ -143,9 +164,9 @@ export default function LoginPage() {
         </Card>
 
         <p className="text-center text-sm text-zinc-500">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-semibold text-white hover:text-indigo-400 transition-colors">
-            Sign up
+          Already have an account?{" "}
+          <Link href="/login" className="font-semibold text-white hover:text-indigo-400 transition-colors">
+            Sign in
           </Link>
         </p>
       </div>
